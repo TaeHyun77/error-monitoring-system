@@ -26,6 +26,15 @@ publishing {
             groupId = 'com.errormonitor'
             artifactId = 'error-monitor-sdk'
             version = '0.1.0'
+
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
         }
     }
 }
