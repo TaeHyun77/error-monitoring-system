@@ -1,0 +1,3 @@
+rootProject.name = 'error-monitor'
+include 'error-monitor-sdk'
+include 'error-monitor-server'

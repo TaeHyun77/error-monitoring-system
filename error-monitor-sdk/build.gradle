@@ -1,0 +1,31 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'org.springframework.boot' apply false
+    id 'io.spring.dependency-management'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+    }
+}
+
+dependencies {
+    api 'org.springframework.boot:spring-boot-autoconfigure'
+
+    compileOnly 'org.springframework.boot:spring-boot-starter-web'
+    compileOnly 'ch.qos.logback:logback-classic'
+    compileOnly 'com.fasterxml.jackson.core:jackson-databind'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            groupId = 'com.errormonitor'
+            artifactId = 'error-monitor-sdk'
+            version = '0.1.0'
+        }
+    }
+}
