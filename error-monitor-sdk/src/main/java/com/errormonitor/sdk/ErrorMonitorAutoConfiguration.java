@@ -8,6 +8,7 @@ import com.errormonitor.sdk.transport.HttpErrorTransport;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
@@ -43,7 +44,7 @@ public class ErrorMonitorAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public HttpErrorTransport httpErrorTransport(RestTemplate errorMonitorRestTemplate,
+    public HttpErrorTransport httpErrorTransport(@Qualifier("errorMonitorRestTemplate") RestTemplate errorMonitorRestTemplate,
                                                   ErrorMonitorProperties properties,
                                                   FileBackupTransport fileBackupTransport) {
         return new HttpErrorTransport(
@@ -68,14 +69,15 @@ public class ErrorMonitorAutoConfiguration {
                 properties.getEnvironment(),
                 properties.getQueueCapacity(),
                 properties.getMaxStackFrames(),
-                properties.getMaxStackTraceBytes()
+                properties.getMaxStackTraceBytes(),
+                properties.getIgnoreExceptions()
         );
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public ExceptionInterceptor exceptionInterceptor(ErrorCaptor errorCaptor) {
-        return new ExceptionInterceptor(errorCaptor);
+    public ExceptionInterceptor exceptionInterceptor(ErrorCaptor errorCaptor, ErrorMonitorProperties properties) {
+        return new ExceptionInterceptor(errorCaptor, properties.getIgnoreUrls());
     }
 
     @Bean

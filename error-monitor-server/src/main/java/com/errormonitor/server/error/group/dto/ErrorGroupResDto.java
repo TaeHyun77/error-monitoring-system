@@ -17,6 +17,9 @@ public class ErrorGroupResDto {
     private String fingerprint;
     private String exceptionType;
     private String message;
+    private String sourceClass;
+    private String sourceMethod;
+    private Integer sourceLineNumber;
     private long eventCount;
     private LocalDateTime firstSeen;
     private LocalDateTime lastSeen;
@@ -29,6 +32,9 @@ public class ErrorGroupResDto {
                 .fingerprint(group.getFingerprint())
                 .exceptionType(group.getExceptionType())
                 .message(group.getMessage())
+                .sourceClass(group.getSourceClass())
+                .sourceMethod(group.getSourceMethod())
+                .sourceLineNumber(group.getSourceLineNumber())
                 .eventCount(group.getEventCount())
                 .firstSeen(group.getFirstSeen())
                 .lastSeen(group.getLastSeen())

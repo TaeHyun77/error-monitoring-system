@@ -6,6 +6,7 @@ import com.errormonitor.server.error.group.ErrorGroup;
 import com.errormonitor.server.error.group.repository.ErrorGroupRepository;
 import com.errormonitor.server.error.ingest.dto.ErrorIngestReqDto;
 import com.errormonitor.server.error.ingest.dto.RequestContextDto;
+import com.errormonitor.server.error.ingest.dto.StackFrameDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -36,24 +37,33 @@ public class ErrorIngestService {
 
     @Transactional
     public void ingest(ErrorIngestReqDto reqDto) {
-        LocalDateTime occurredAt = LocalDateTime.ofInstant(reqDto.getTimestamp(), ZoneId.systemDefault());
+        LocalDateTime occurredAt = LocalDateTime.ofInstant(reqDto.getTimestamp(), ZoneId.of("Asia/Seoul"));
 
         Optional<ErrorGroup> existingGroup = errorGroupRepository
                 .findByProjectIdAndFingerprint(reqDto.getProjectId(), reqDto.getFingerprint());
+
+        StackFrameDto sourceFrame = getSourceFrame(reqDto);
 
         ErrorGroup group;
         if (existingGroup.isPresent()) {
             group = existingGroup.get();
             group.incrementAndUpdate(occurredAt);
         } else {
-            group = ErrorGroup.builder()
+            ErrorGroup.ErrorGroupBuilder groupBuilder = ErrorGroup.builder()
                     .projectId(reqDto.getProjectId())
                     .fingerprint(reqDto.getFingerprint())
                     .exceptionType(reqDto.getExceptionInfo().getType())
                     .message(truncateMessage(reqDto.getExceptionInfo().getMessage()))
-                    .firstSeen(occurredAt)
-                    .build();
-            group = errorGroupRepository.save(group);
+                    .firstSeen(occurredAt);
+
+            if (sourceFrame != null) {
+                groupBuilder
+                        .sourceClass(sourceFrame.getClassName())
+                        .sourceMethod(sourceFrame.getMethodName())
+                        .sourceLineNumber(sourceFrame.getLineNumber());
+            }
+
+            group = errorGroupRepository.save(groupBuilder.build());
         }
 
         ErrorEvent event = buildErrorEvent(reqDto, group);
@@ -64,6 +74,8 @@ public class ErrorIngestService {
     }
 
     private ErrorEvent buildErrorEvent(ErrorIngestReqDto reqDto, ErrorGroup group) {
+        StackFrameDto sourceFrame = getSourceFrame(reqDto);
+
         ErrorEvent.ErrorEventBuilder builder = ErrorEvent.builder()
                 .projectId(reqDto.getProjectId())
                 .errorGroup(group)
@@ -71,6 +83,12 @@ public class ErrorIngestService {
                 .message(truncateMessage(reqDto.getExceptionInfo().getMessage()))
                 .stackTrace(reqDto.getExceptionInfo().getRawStackTrace())
                 .environment(reqDto.getEnvironment());
+
+        if (sourceFrame != null) {
+            builder.sourceClass(sourceFrame.getClassName())
+                    .sourceMethod(sourceFrame.getMethodName())
+                    .sourceLineNumber(sourceFrame.getLineNumber());
+        }
 
         RequestContextDto ctx = reqDto.getRequestContext();
         if (ctx != null) {
@@ -82,6 +100,14 @@ public class ErrorIngestService {
         }
 
         return builder.build();
+    }
+
+    private StackFrameDto getSourceFrame(ErrorIngestReqDto reqDto) {
+        if (reqDto.getExceptionInfo() == null || reqDto.getExceptionInfo().getStackFrames() == null
+                || reqDto.getExceptionInfo().getStackFrames().isEmpty()) {
+            return null;
+        }
+        return reqDto.getExceptionInfo().getStackFrames().get(0);
     }
 
     private String truncateMessage(String message) {

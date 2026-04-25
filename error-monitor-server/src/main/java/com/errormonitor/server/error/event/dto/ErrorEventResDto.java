@@ -17,6 +17,9 @@ public class ErrorEventResDto {
     private String exceptionType;
     private String message;
     private String stackTrace;
+    private String sourceClass;
+    private String sourceMethod;
+    private Integer sourceLineNumber;
     private String requestMethod;
     private String requestUrl;
     private String requestHeaders;
@@ -33,6 +36,9 @@ public class ErrorEventResDto {
                 .exceptionType(event.getExceptionType())
                 .message(event.getMessage())
                 .stackTrace(event.getStackTrace())
+                .sourceClass(event.getSourceClass())
+                .sourceMethod(event.getSourceMethod())
+                .sourceLineNumber(event.getSourceLineNumber())
                 .requestMethod(event.getRequestMethod())
                 .requestUrl(event.getRequestUrl())
                 .requestHeaders(event.getRequestHeaders())

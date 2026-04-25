@@ -33,6 +33,12 @@ public class ErrorGroup extends BaseTime {
     @Column(length = 1000)
     private String message;
 
+    private String sourceClass;
+
+    private String sourceMethod;
+
+    private Integer sourceLineNumber;
+
     @Column(nullable = false)
     private long eventCount;
 
@@ -48,11 +54,15 @@ public class ErrorGroup extends BaseTime {
 
     @Builder
     public ErrorGroup(String projectId, String fingerprint, String exceptionType,
-                      String message, LocalDateTime firstSeen) {
+                      String message, String sourceClass, String sourceMethod,
+                      Integer sourceLineNumber, LocalDateTime firstSeen) {
         this.projectId = projectId;
         this.fingerprint = fingerprint;
         this.exceptionType = exceptionType;
         this.message = message;
+        this.sourceClass = sourceClass;
+        this.sourceMethod = sourceMethod;
+        this.sourceLineNumber = sourceLineNumber;
         this.eventCount = 1;
         this.firstSeen = firstSeen;
         this.lastSeen = firstSeen;
