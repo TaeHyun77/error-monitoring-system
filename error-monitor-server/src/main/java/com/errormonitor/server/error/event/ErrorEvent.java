@@ -50,18 +50,28 @@ public class ErrorEvent extends BaseTime {
 
     private String clientIp;
 
+    private String sourceClass;
+
+    private String sourceMethod;
+
+    private Integer sourceLineNumber;
+
     private String environment;
 
     @Builder
     public ErrorEvent(String projectId, ErrorGroup errorGroup, String exceptionType,
-                      String message, String stackTrace, String requestMethod,
-                      String requestUrl, String requestHeaders, String requestParameters,
-                      String clientIp, String environment) {
+                      String message, String stackTrace, String sourceClass,
+                      String sourceMethod, Integer sourceLineNumber,
+                      String requestMethod, String requestUrl, String requestHeaders,
+                      String requestParameters, String clientIp, String environment) {
         this.projectId = projectId;
         this.errorGroup = errorGroup;
         this.exceptionType = exceptionType;
         this.message = message;
         this.stackTrace = stackTrace;
+        this.sourceClass = sourceClass;
+        this.sourceMethod = sourceMethod;
+        this.sourceLineNumber = sourceLineNumber;
         this.requestMethod = requestMethod;
         this.requestUrl = requestUrl;
         this.requestHeaders = requestHeaders;

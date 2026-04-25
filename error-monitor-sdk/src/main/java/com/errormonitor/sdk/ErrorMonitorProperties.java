@@ -4,6 +4,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "error-monitor")
@@ -17,4 +20,6 @@ public class ErrorMonitorProperties {
     private int maxStackFrames = 50;
     private int maxStackTraceBytes = 10240;
     private String backupDir = "error-backup";
+    private List<String> ignoreExceptions = new ArrayList<>();
+    private List<String> ignoreUrls = new ArrayList<>();
 }
