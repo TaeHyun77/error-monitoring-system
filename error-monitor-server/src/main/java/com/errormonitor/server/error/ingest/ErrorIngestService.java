@@ -8,7 +8,6 @@ import com.errormonitor.server.error.group.repository.ErrorGroupRepository;
 import com.errormonitor.server.error.ingest.dto.ErrorIngestReqDto;
 import com.errormonitor.server.error.ingest.dto.RequestContextDto;
 import com.errormonitor.server.error.ingest.dto.StackFrameDto;
-import com.errormonitor.server.notification.NotificationEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -76,7 +75,6 @@ public class ErrorIngestService {
             }
 
             group = errorGroupRepository.save(groupBuilder.build());
-            notificationType = NotificationEvent.Type.NEW_ERROR;
         }
 
         ErrorEvent event = buildErrorEvent(reqDto, group);

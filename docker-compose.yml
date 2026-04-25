@@ -10,6 +10,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    networks:
+      - airport-chat-net
 
   error-monitor-server:
     build: .
@@ -24,6 +26,12 @@ services:
       DB_PASSWORD: postgres
     depends_on:
       - postgres
+    networks:
+      - airport-chat-net
 
 volumes:
   postgres-data:
+
+networks:
+  airport-chat-net:
+    external: true

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Error Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<nav th:fragment="nav" class="bg-gray-900 text-white px-6 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <a href="/" class="text-xl font-bold tracking-tight">Error Monitor</a>
+        <div class="flex items-center space-x-4 text-sm text-gray-300">
+            <a href="/" class="hover:text-white">프로젝트 목록</a>
+        </div>
+    </div>
+</nav>
+
+<footer th:fragment="footer" class="bg-gray-100 text-center text-sm text-gray-500 py-4 mt-12">
+    <p>Error Monitor Dashboard</p>
+</footer>
+
+</body>
+</html>

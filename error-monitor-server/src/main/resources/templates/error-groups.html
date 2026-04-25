@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('에러 그룹 - Error Monitor')}"></head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="flex-1 mx-auto w-full px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <nav class="text-sm text-gray-500 mb-1">
+                <a href="/" class="hover:text-gray-700">프로젝트</a>
+                <span class="mx-1">/</span>
+                <span th:text="${projectId}">project-id</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-gray-900">에러 그룹</h1>
+        </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(errorGroups)}" class="text-center py-20 text-gray-400">
+        <p class="text-lg">에러 그룹이 없습니다.</p>
+    </div>
+
+    <div th:unless="${#lists.isEmpty(errorGroups)}" class="bg-white rounded-lg shadow border border-gray-200">
+        <table class="w-full text-sm table-auto">
+            <thead class="bg-gray-50 text-left text-gray-600">
+                <tr>
+                    <th class="px-4 py-3 font-medium whitespace-nowrap">예외 타입</th>
+                    <th class="px-4 py-3 font-medium">메시지</th>
+                    <th class="px-4 py-3 font-medium whitespace-nowrap">발생 위치</th>
+                    <th class="px-4 py-3 font-medium text-center whitespace-nowrap">발생 횟수</th>
+                    <th class="px-4 py-3 font-medium whitespace-nowrap">마지막 발생</th>
+                    <th class="px-4 py-3 font-medium text-center whitespace-nowrap">상태</th>
+                    <th class="px-4 py-3 font-medium text-center whitespace-nowrap">액션</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                <tr th:each="group : ${errorGroups}" class="hover:bg-gray-50">
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <a th:href="@{/dashboard/groups/{gid}(gid=${group.id})}"
+                           class="text-blue-600 hover:underline font-medium"
+                           th:text="${group.exceptionType}">NullPointerException</a>
+                    </td>
+                    <td class="px-4 py-3 text-gray-600" th:text="${group.message}">Error message</td>
+                    <td class="px-4 py-3 text-gray-500 font-mono text-xs whitespace-nowrap">
+                        <span th:if="${group.sourceClass != null}" th:text="${group.sourceClass + '.' + group.sourceMethod + '():' + group.sourceLineNumber}">Class.method():42</span>
+                        <span th:if="${group.sourceClass == null}" class="text-gray-300">-</span>
+                    </td>
+                    <td class="px-4 py-3 text-center font-mono whitespace-nowrap" th:text="${group.eventCount}">0</td>
+                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap" th:text="${#temporals.format(group.lastSeen, 'yyyy-MM-dd HH:mm')}">2024-01-01</td>
+                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                        <span th:switch="${group.status.name()}">
+                            <span th:case="'UNRESOLVED'" class="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700">미해결</span>
+                            <span th:case="'RESOLVED'" class="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700">해결됨</span>
+                            <span th:case="'REGRESSED'" class="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-orange-100 text-orange-700">재발</span>
+                            <span th:case="'IGNORED'" class="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-500">무시</span>
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                        <a th:href="@{/dashboard/groups/{gid}(gid=${group.id})}"
+                           class="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">상세</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+
+</body>
+</html>
