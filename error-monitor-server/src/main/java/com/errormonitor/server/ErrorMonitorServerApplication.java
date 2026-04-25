@@ -8,6 +8,7 @@ import java.util.TimeZone;
 
 @SpringBootApplication
 @EnableJpaAuditing
+@EnableAsync
 public class ErrorMonitorServerApplication {
 
     @PostConstruct
