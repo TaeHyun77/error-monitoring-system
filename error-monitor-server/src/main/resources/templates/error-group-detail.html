@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('에러 그룹 상세 - Error Monitor')}"></head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
+    <nav class="text-sm text-gray-500 mb-4">
+        <a href="/" class="hover:text-gray-700">프로젝트</a>
+        <span class="mx-1">/</span>
+        <a th:href="@{/dashboard/{pid}(pid=${group.projectId})}" class="hover:text-gray-700" th:text="${group.projectId}">project-id</a>
+        <span class="mx-1">/</span>
+        <span>에러 그룹 상세</span>
+    </nav>
+
+    <!-- 그룹 요약 -->
+    <div class="bg-white rounded-lg shadow border border-gray-200 p-6 mb-6">
+        <div class="flex items-start justify-between">
+            <div>
+                <h1 class="text-xl font-bold text-gray-900" th:text="${group.exceptionType}">NullPointerException</h1>
+                <p class="text-gray-600 mt-1" th:text="${group.message}">Error message</p>
+            </div>
+            <span th:switch="${group.status.name()}">
+                <span th:case="'UNRESOLVED'" class="inline-block px-3 py-1 text-sm font-medium rounded-full bg-red-100 text-red-700">미해결</span>
+                <span th:case="'RESOLVED'" class="inline-block px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-700">해결됨</span>
+                <span th:case="'REGRESSED'" class="inline-block px-3 py-1 text-sm font-medium rounded-full bg-orange-100 text-orange-700">재발</span>
+                <span th:case="'IGNORED'" class="inline-block px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-500">무시</span>
+            </span>
+        </div>
+
+        <div th:if="${group.sourceClass != null}" class="mt-6 text-sm">
+            <span class="text-gray-500">발생 위치</span>
+            <p class="font-mono text-xs font-semibold text-gray-900 mt-0.5" th:text="${group.sourceClass + '.' + group.sourceMethod + '():' + group.sourceLineNumber}">Class.method():42</p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 text-sm">
+            <div>
+                <span class="text-gray-500">발생 횟수</span>
+                <p class="font-semibold text-gray-900 mt-0.5" th:text="${group.eventCount}">0</p>
+            </div>
+            <div>
+                <span class="text-gray-500">첫 발생</span>
+                <p class="font-semibold text-gray-900 mt-0.5" th:text="${#temporals.format(group.firstSeen, 'yyyy-MM-dd HH:mm:ss')}">-</p>
+            </div>
+            <div>
+                <span class="text-gray-500">마지막 발생</span>
+                <p class="font-semibold text-gray-900 mt-0.5" th:text="${#temporals.format(group.lastSeen, 'yyyy-MM-dd HH:mm:ss')}">-</p>
+            </div>
+            <div class="flex items-end space-x-2">
+                <form th:action="@{/dashboard/groups/{gid}/resolve(gid=${group.id})}" method="post"
+                      th:if="${group.status.name() != 'RESOLVED'}">
+                    <button type="submit" class="px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600">해결</button>
+                </form>
+                <form th:action="@{/dashboard/groups/{gid}/ignore(gid=${group.id})}" method="post"
+                      th:if="${group.status.name() != 'IGNORED'}">
+                    <button type="submit" class="px-3 py-1.5 text-sm bg-gray-400 text-white rounded hover:bg-gray-500">무시</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 이벤트 목록 -->
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">이벤트 목록</h2>
+
+    <div th:if="${#lists.isEmpty(events)}" class="text-center py-12 text-gray-400">
+        <p>이벤트가 없습니다.</p>
+    </div>
+
+    <div th:unless="${#lists.isEmpty(events)}" class="bg-white rounded-lg shadow border border-gray-200 overflow-x-auto">
+        <table class="min-w-full text-sm">
+            <thead class="bg-gray-50 text-left text-gray-600">
+                <tr>
+                    <th class="px-4 py-3 font-medium">예외 타입</th>
+                    <th class="px-4 py-3 font-medium">메시지</th>
+                    <th class="px-4 py-3 font-medium whitespace-nowrap">발생 위치</th>
+                    <th class="px-4 py-3 font-medium">환경</th>
+                    <th class="px-4 py-3 font-medium">요청 URL</th>
+                    <th class="px-4 py-3 font-medium whitespace-nowrap">발생 시간</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                <tr th:each="event : ${events}" class="hover:bg-gray-50">
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <a th:href="@{/dashboard/events/{eid}(eid=${event.id})}"
+                           class="text-blue-600 hover:underline font-medium"
+                           th:text="${event.exceptionType}">Exception</a>
+                    </td>
+                    <td class="px-4 py-3 text-gray-600" th:text="${event.message}">Message</td>
+                    <td class="px-4 py-3 text-gray-500 font-mono text-xs whitespace-nowrap">
+                        <span th:if="${event.sourceClass != null}" th:text="${event.sourceClass + '.' + event.sourceMethod + '():' + event.sourceLineNumber}">Class.method():42</span>
+                        <span th:if="${event.sourceClass == null}" class="text-gray-300">-</span>
+                    </td>
+                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap" th:text="${event.environment} ?: '-'">prod</td>
+                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap" th:text="${event.requestUrl} ?: '-'">/api/test</td>
+                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap" th:text="${#temporals.format(event.createdAt, 'yyyy-MM-dd HH:mm:ss')}">-</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+
+</body>
+</html>
