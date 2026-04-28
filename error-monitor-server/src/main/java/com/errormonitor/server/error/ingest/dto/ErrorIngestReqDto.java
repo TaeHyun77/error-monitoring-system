@@ -12,4 +12,5 @@ public class ErrorIngestReqDto {
     private RequestContextDto requestContext;
     private Instant timestamp;
     private String environment;
+    private String githubRepo;
 }

@@ -15,3 +15,17 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+notification:
+  slack:
+    enabled: true
+    webhook-url: ${SLACK_WEBHOOK_URL:}
+
+groq:
+  api-key: ${GROQ_API_KEY:}
+  model: llama-3.3-70b-versatile
+  max-tokens: 4096
+  max-tool-rounds: 10
+
+github:
+  token: ${GITHUB_TOKEN:}

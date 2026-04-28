@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -26,5 +27,11 @@ public class ProjectController {
     @GetMapping
     public List<ProjectResDto> getProjects() {
         return projectService.getProjects();
+    }
+
+    @PatchMapping("/{projectId}/github-repo")
+    public ProjectResDto updateGithubRepo(@PathVariable String projectId,
+                                          @RequestBody Map<String, String> body) {
+        return projectService.updateGithubRepo(projectId, body.get("githubRepo"));
     }
 }

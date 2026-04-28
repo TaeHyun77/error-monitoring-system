@@ -7,4 +7,5 @@ public class ProjectReqDto {
     private String projectId;
     private String name;
     private String description;
+    private String githubRepo;
 }

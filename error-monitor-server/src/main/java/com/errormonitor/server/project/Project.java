@@ -28,11 +28,19 @@ public class Project extends BaseTime {
 
     private String description;
 
+    private String githubRepo;
+
     @Builder
     public Project(String projectId, String apiKey, String name, String description) {
         this.projectId = projectId;
         this.apiKey = apiKey;
         this.name = name;
         this.description = description;
+    }
+
+    public void updateGithubRepo(String githubRepo) {
+        if (githubRepo != null && !githubRepo.isBlank()) {
+            this.githubRepo = githubRepo;
+        }
     }
 }

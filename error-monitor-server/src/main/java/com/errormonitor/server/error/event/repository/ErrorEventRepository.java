@@ -8,4 +8,5 @@ import java.util.List;
 public interface ErrorEventRepository extends JpaRepository<ErrorEvent, Long> {
     List<ErrorEvent> findByErrorGroupIdOrderByCreatedAtDesc(Long errorGroupId);
     List<ErrorEvent> findByProjectIdOrderByCreatedAtDesc(String projectId);
+    ErrorEvent findFirstByErrorGroupIdOrderByCreatedAtDesc(Long errorGroupId);
 }

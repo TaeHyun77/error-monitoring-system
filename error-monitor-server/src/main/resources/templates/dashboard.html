@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('프로젝트 목록 - Error Monitor')}"></head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">프로젝트 목록</h1>
+
+    <div th:if="${#lists.isEmpty(projects)}" class="text-center py-20 text-gray-400">
+        <p class="text-lg">등록된 프로젝트가 없습니다.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <a th:each="project : ${projects}"
+           th:href="@{/dashboard/{pid}(pid=${project.projectId})}"
+           class="block bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 border border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900" th:text="${project.name}">Project Name</h2>
+            <p class="text-sm text-gray-500 mt-1" th:text="${project.description} ?: '설명 없음'">Description</p>
+            <div class="mt-4 flex items-center justify-between text-xs text-gray-400">
+                <span th:text="'ID: ' + ${project.projectId}">ID</span>
+                <span th:text="${#temporals.format(project.createdAt, 'yyyy-MM-dd')}">2024-01-01</span>
+            </div>
+        </a>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+
+</body>
+</html>

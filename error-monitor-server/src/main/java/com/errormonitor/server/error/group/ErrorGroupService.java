@@ -39,4 +39,11 @@ public class ErrorGroupService {
                 .orElseThrow(() -> new MonitorException(HttpStatus.NOT_FOUND, ErrorCode.ERROR_GROUP_NOT_FOUND));
         group.resolve();
     }
+
+    @Transactional
+    public void ignoreErrorGroup(Long groupId) {
+        ErrorGroup group = errorGroupRepository.findById(groupId)
+                .orElseThrow(() -> new MonitorException(HttpStatus.NOT_FOUND, ErrorCode.ERROR_GROUP_NOT_FOUND));
+        group.ignore();
+    }
 }

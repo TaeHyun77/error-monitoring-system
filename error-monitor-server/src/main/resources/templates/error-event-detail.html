@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('이벤트 상세 - Error Monitor')}"></head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
+    <nav class="text-sm text-gray-500 mb-4">
+        <a href="/" class="hover:text-gray-700">프로젝트</a>
+        <span class="mx-1">/</span>
+        <a th:href="@{/dashboard/{pid}(pid=${event.projectId})}" class="hover:text-gray-700" th:text="${event.projectId}">project-id</a>
+        <span class="mx-1">/</span>
+        <a th:href="@{/dashboard/groups/{gid}(gid=${event.errorGroupId})}" class="hover:text-gray-700">에러 그룹</a>
+        <span class="mx-1">/</span>
+        <span>이벤트 상세</span>
+    </nav>
+
+    <!-- 기본 정보 -->
+    <div class="bg-white rounded-lg shadow border border-gray-200 p-6 mb-6">
+        <h1 class="text-xl font-bold text-gray-900" th:text="${event.exceptionType}">NullPointerException</h1>
+        <p class="text-gray-600 mt-1" th:text="${event.message}">Error message</p>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6 text-sm">
+            <div>
+                <span class="text-gray-500">발생 위치</span>
+                <p th:if="${event.sourceClass != null}" class="font-mono text-xs font-semibold text-gray-900 mt-0.5" th:text="${event.sourceClass + '.' + event.sourceMethod + '():' + event.sourceLineNumber}">Class.method():42</p>
+                <p th:if="${event.sourceClass == null}" class="text-gray-300 mt-0.5">-</p>
+            </div>
+            <div>
+                <span class="text-gray-500">환경</span>
+                <p class="font-semibold text-gray-900 mt-0.5" th:text="${event.environment} ?: '-'">prod</p>
+            </div>
+            <div>
+                <span class="text-gray-500">클라이언트 IP</span>
+                <p class="font-semibold text-gray-900 mt-0.5" th:text="${event.clientIp} ?: '-'">127.0.0.1</p>
+            </div>
+            <div>
+                <span class="text-gray-500">발생 시간</span>
+                <p class="font-semibold text-gray-900 mt-0.5" th:text="${#temporals.format(event.createdAt, 'yyyy-MM-dd HH:mm:ss')}">-</p>
+            </div>
+            <div>
+                <span class="text-gray-500">이벤트 ID</span>
+                <p class="font-semibold text-gray-900 mt-0.5" th:text="${event.id}">1</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- HTTP 요청 정보 -->
+    <div th:if="${event.requestMethod != null or event.requestUrl != null}"
+         class="bg-white rounded-lg shadow border border-gray-200 p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">HTTP 요청 정보</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+                <span class="text-gray-500">메서드</span>
+                <p class="font-mono font-semibold text-gray-900 mt-0.5" th:text="${event.requestMethod} ?: '-'">GET</p>
+            </div>
+            <div>
+                <span class="text-gray-500">URL</span>
+                <p class="font-mono text-gray-900 mt-0.5 break-all" th:text="${event.requestUrl} ?: '-'">/api/test</p>
+            </div>
+        </div>
+
+        <div th:if="${event.requestHeaders != null}" class="mt-4">
+            <span class="text-sm text-gray-500">Headers</span>
+            <pre class="mt-1 bg-gray-50 rounded p-3 text-xs text-gray-700 overflow-x-auto" th:text="${event.requestHeaders}">headers</pre>
+        </div>
+
+        <div th:if="${event.requestParameters != null}" class="mt-4">
+            <span class="text-sm text-gray-500">Parameters</span>
+            <pre class="mt-1 bg-gray-50 rounded p-3 text-xs text-gray-700 overflow-x-auto" th:text="${event.requestParameters}">parameters</pre>
+        </div>
+    </div>
+
+    <!-- 스택트레이스 -->
+    <div th:if="${event.stackTrace != null}" class="bg-white rounded-lg shadow border border-gray-200 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">스택트레이스</h2>
+        <pre class="bg-gray-900 text-green-400 rounded-lg p-4 text-xs leading-relaxed overflow-x-auto max-h-[600px] overflow-y-auto" th:text="${event.stackTrace}">stack trace</pre>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+
+</body>
+</html>
