@@ -1,4 +1,4 @@
-package com.errormonitor.sdk.model;
+package com.errormonitor.sdk.stackTrace;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

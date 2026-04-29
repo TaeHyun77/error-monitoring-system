@@ -1,5 +1,6 @@
 package com.errormonitor.sdk.model;
 
+import com.errormonitor.sdk.stackTrace.StackFrameInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

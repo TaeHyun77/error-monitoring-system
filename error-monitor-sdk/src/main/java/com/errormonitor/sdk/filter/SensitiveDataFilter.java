@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+// 민감한 정보 필터링 클래스
 public class SensitiveDataFilter {
 
     private static final String MASKED = "[FILTERED]";
