@@ -16,8 +16,7 @@ public enum ErrorCode {
     INVALID_API_KEY("유효하지 않은 API Key입니다"),
 
     // CONFLICT
-    DUPLICATE_PROJECT_ID("이미 존재하는 프로젝트 ID입니다"),
-    ANALYSIS_IN_PROGRESS("이미 분석이 진행 중입니다");
+    DUPLICATE_PROJECT_ID("이미 존재하는 프로젝트 ID입니다");
 
     private final String message;
 }

@@ -16,5 +16,4 @@ public class ErrorEvent {
     private RequestContext requestContext;
     private Instant timestamp;
     private String environment;
-    private String githubRepo;
 }

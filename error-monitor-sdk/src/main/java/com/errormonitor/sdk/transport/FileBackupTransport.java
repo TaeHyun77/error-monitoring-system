@@ -10,12 +10,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class FileBackupTransport {
 
     private static final Logger log = LoggerFactory.getLogger(FileBackupTransport.class);
-    private static final AtomicLong counter = new AtomicLong(0);
     private final ObjectMapper objectMapper;
     private final Path backupDir;
 
@@ -32,7 +30,7 @@ public class FileBackupTransport {
 
     public void backup(ErrorEvent event) {
         try {
-            String fileName = "error_" + System.currentTimeMillis() + "_" + counter.getAndIncrement() + ".json";
+            String fileName = "error_" + System.currentTimeMillis() + ".json";
             Path filePath = backupDir.resolve(fileName);
             objectMapper.writeValue(filePath.toFile(), event);
             log.debug("에러 이벤트 백업 완료: {}", filePath);

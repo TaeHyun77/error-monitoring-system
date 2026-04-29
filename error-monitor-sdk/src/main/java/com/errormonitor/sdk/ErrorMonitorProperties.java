@@ -20,12 +20,6 @@ public class ErrorMonitorProperties {
     private int maxStackFrames = 50;
     private int maxStackTraceBytes = 10240;
     private String backupDir = "error-backup";
-    private String githubRepo = "";
     private List<String> ignoreExceptions = new ArrayList<>();
     private List<String> ignoreUrls = new ArrayList<>();
-    private int corePoolSize = 2;
-    private int maxPoolSize = 4;
-    private int connectTimeout = 3000;
-    private int readTimeout = 5000;
-    private int shutdownTimeout = 10;
 }
