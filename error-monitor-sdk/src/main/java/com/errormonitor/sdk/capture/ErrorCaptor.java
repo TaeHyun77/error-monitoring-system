@@ -5,6 +5,7 @@ import com.errormonitor.sdk.fingerprint.FingerprintGenerator;
 import com.errormonitor.sdk.model.ErrorEvent;
 import com.errormonitor.sdk.model.ExceptionInfo;
 import com.errormonitor.sdk.model.RequestContext;
+import com.errormonitor.sdk.transport.FileBackupTransport;
 import com.errormonitor.sdk.transport.HttpErrorTransport;
 import com.errormonitor.sdk.util.StackTraceUtils;
 import jakarta.annotation.PreDestroy;
@@ -20,16 +21,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ErrorCaptor {
 
     private static final Logger log = LoggerFactory.getLogger(ErrorCaptor.class);
 
     private final HttpErrorTransport transport;
+    private final FileBackupTransport fileBackupTransport;
     private final FingerprintGenerator fingerprintGenerator;
     private final SensitiveDataFilter sensitiveDataFilter;
     private final String projectId;
@@ -37,14 +41,17 @@ public class ErrorCaptor {
     private final int maxStackFrames;
     private final int maxStackTraceBytes;
     private final List<String> ignoreExceptions;
+    private final String githubRepo;
+    private final int shutdownTimeout;
 
     // 같은 Exception 객체가 Interceptor와 Logback에서 중복 캡처되는 것을 방지
     private final Set<Exception> capturedExceptions =
             Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
 
-    private final ExecutorService executor;
+    private final ThreadPoolExecutor executor;
 
     public ErrorCaptor(HttpErrorTransport transport,
+                       FileBackupTransport fileBackupTransport,
                        FingerprintGenerator fingerprintGenerator,
                        SensitiveDataFilter sensitiveDataFilter,
                        String projectId,
@@ -52,8 +59,13 @@ public class ErrorCaptor {
                        int queueCapacity,
                        int maxStackFrames,
                        int maxStackTraceBytes,
-                       List<String> ignoreExceptions) {
+                       List<String> ignoreExceptions,
+                       String githubRepo,
+                       int corePoolSize,
+                       int maxPoolSize,
+                       int shutdownTimeout) {
         this.transport = transport;
+        this.fileBackupTransport = fileBackupTransport;
         this.fingerprintGenerator = fingerprintGenerator;
         this.sensitiveDataFilter = sensitiveDataFilter;
         this.projectId = projectId;
@@ -61,10 +73,21 @@ public class ErrorCaptor {
         this.maxStackFrames = maxStackFrames;
         this.maxStackTraceBytes = maxStackTraceBytes;
         this.ignoreExceptions = ignoreExceptions;
+        this.githubRepo = githubRepo;
+        this.shutdownTimeout = shutdownTimeout;
+
+        AtomicInteger threadNumber = new AtomicInteger(1);
+        ThreadFactory daemonThreadFactory = r -> {
+            Thread t = new Thread(r, "error-monitor-sender-" + threadNumber.getAndIncrement());
+            t.setDaemon(true);
+            return t;
+        };
+
         this.executor = new ThreadPoolExecutor(
-                1, 2, 60L, TimeUnit.SECONDS,
+                corePoolSize, maxPoolSize, 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(queueCapacity),
-                new ThreadPoolExecutor.DiscardPolicy()
+                daemonThreadFactory,
+                new BackupOnRejectHandler(fileBackupTransport)
         );
     }
 
@@ -75,13 +98,7 @@ public class ErrorCaptor {
 
         try {
             ErrorEvent event = buildEvent(exception, request);
-            executor.submit(() -> {
-                try {
-                    transport.send(event);
-                } catch (Exception e) {
-                    log.debug("에러 이벤트 전송 실패", e);
-                }
-            });
+            executor.submit(new ErrorSendTask(transport, event));
         } catch (Exception e) {
             log.debug("에러 캡처 실패", e);
         }
@@ -94,13 +111,7 @@ public class ErrorCaptor {
 
         try {
             ErrorEvent event = buildEvent(exception, null);
-            executor.submit(() -> {
-                try {
-                    transport.send(event);
-                } catch (Exception e) {
-                    log.debug("에러 이벤트 전송 실패", e);
-                }
-            });
+            executor.submit(new ErrorSendTask(transport, event));
         } catch (Exception e) {
             log.debug("에러 캡처 실패", e);
         }
@@ -139,6 +150,7 @@ public class ErrorCaptor {
                 .requestContext(requestContext)
                 .timestamp(Instant.now())
                 .environment(environment)
+                .githubRepo(githubRepo)
                 .build();
     }
 
@@ -173,15 +185,69 @@ public class ErrorCaptor {
 
     @PreDestroy
     public void shutdown() {
+        log.info("에러 모니터 SDK 종료 - 큐 잔여: {}, 활성: {}",
+                executor.getQueue().size(), executor.getActiveCount());
+
         executor.shutdown();
 
         try {
-            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                executor.shutdownNow();
+            if (!executor.awaitTermination(shutdownTimeout, TimeUnit.SECONDS)) {
+                List<Runnable> dropped = executor.shutdownNow();
+                for (Runnable r : dropped) {
+                    if (r instanceof ErrorSendTask task) {
+                        fileBackupTransport.backup(task.getEvent());
+                    }
+                }
+                log.warn("에러 모니터 SDK 강제 종료 - 미처리 작업 {} 건 백업 완료", dropped.size());
             }
         } catch (InterruptedException e) {
-            executor.shutdownNow();
+            List<Runnable> dropped = executor.shutdownNow();
+            for (Runnable r : dropped) {
+                if (r instanceof ErrorSendTask task) {
+                    fileBackupTransport.backup(task.getEvent());
+                }
+            }
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private static class ErrorSendTask implements Runnable {
+        private final HttpErrorTransport transport;
+        private final ErrorEvent event;
+
+        ErrorSendTask(HttpErrorTransport transport, ErrorEvent event) {
+            this.transport = transport;
+            this.event = event;
+        }
+
+        public ErrorEvent getEvent() {
+            return event;
+        }
+
+        @Override
+        public void run() {
+            try {
+                transport.send(event);
+            } catch (Exception e) {
+                LoggerFactory.getLogger(ErrorCaptor.class).debug("에러 이벤트 전송 실패", e);
+            }
+        }
+    }
+
+    private static class BackupOnRejectHandler implements RejectedExecutionHandler {
+        private final FileBackupTransport fileBackupTransport;
+
+        BackupOnRejectHandler(FileBackupTransport fileBackupTransport) {
+            this.fileBackupTransport = fileBackupTransport;
+        }
+
+        @Override
+        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+            LoggerFactory.getLogger(ErrorCaptor.class)
+                    .warn("에러 전송 큐 초과 - 로컬 백업으로 전환");
+            if (r instanceof ErrorSendTask task) {
+                fileBackupTransport.backup(task.getEvent());
+            }
         }
     }
 }

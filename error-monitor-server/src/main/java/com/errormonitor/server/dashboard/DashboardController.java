@@ -1,5 +1,6 @@
 package com.errormonitor.server.dashboard;
 
+import com.errormonitor.server.analysis.ErrorAnalysisService;
 import com.errormonitor.server.error.event.ErrorEventService;
 import com.errormonitor.server.error.group.ErrorGroupService;
 import com.errormonitor.server.project.ProjectService;
@@ -15,13 +16,16 @@ public class DashboardController {
     private final ProjectService projectService;
     private final ErrorGroupService errorGroupService;
     private final ErrorEventService errorEventService;
+    private final ErrorAnalysisService errorAnalysisService;
 
     public DashboardController(ProjectService projectService,
                                ErrorGroupService errorGroupService,
-                               ErrorEventService errorEventService) {
+                               ErrorEventService errorEventService,
+                               ErrorAnalysisService errorAnalysisService) {
         this.projectService = projectService;
         this.errorGroupService = errorGroupService;
         this.errorEventService = errorEventService;
+        this.errorAnalysisService = errorAnalysisService;
     }
 
     @GetMapping("/")
@@ -41,6 +45,7 @@ public class DashboardController {
     public String errorGroupDetail(@PathVariable Long groupId, Model model) {
         model.addAttribute("group", errorGroupService.getErrorGroup(groupId));
         model.addAttribute("events", errorEventService.getEventsByGroup(groupId));
+        model.addAttribute("analysis", errorAnalysisService.getAnalysis(groupId));
         return "error-group-detail";
     }
 
@@ -59,6 +64,12 @@ public class DashboardController {
     @PostMapping("/dashboard/groups/{groupId}/ignore")
     public String ignoreGroup(@PathVariable Long groupId) {
         errorGroupService.ignoreErrorGroup(groupId);
+        return "redirect:/dashboard/groups/" + groupId;
+    }
+
+    @PostMapping("/dashboard/groups/{groupId}/analyze")
+    public String analyzeGroup(@PathVariable Long groupId) {
+        errorAnalysisService.requestAnalysis(groupId);
         return "redirect:/dashboard/groups/" + groupId;
     }
 }

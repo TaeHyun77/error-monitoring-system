@@ -11,6 +11,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
@@ -32,8 +33,11 @@ public class ErrorMonitorAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(name = "errorMonitorRestTemplate")
-    public RestTemplate errorMonitorRestTemplate() {
-        return new RestTemplate();
+    public RestTemplate errorMonitorRestTemplate(ErrorMonitorProperties properties) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(properties.getConnectTimeout());
+        factory.setReadTimeout(properties.getReadTimeout());
+        return new RestTemplate(factory);
     }
 
     @Bean
@@ -58,11 +62,13 @@ public class ErrorMonitorAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ErrorCaptor errorCaptor(HttpErrorTransport httpErrorTransport,
+                                   FileBackupTransport fileBackupTransport,
                                    FingerprintGenerator fingerprintGenerator,
                                    SensitiveDataFilter sensitiveDataFilter,
                                    ErrorMonitorProperties properties) {
         return new ErrorCaptor(
                 httpErrorTransport,
+                fileBackupTransport,
                 fingerprintGenerator,
                 sensitiveDataFilter,
                 properties.getProjectId(),
@@ -70,7 +76,11 @@ public class ErrorMonitorAutoConfiguration {
                 properties.getQueueCapacity(),
                 properties.getMaxStackFrames(),
                 properties.getMaxStackTraceBytes(),
-                properties.getIgnoreExceptions()
+                properties.getIgnoreExceptions(),
+                properties.getGithubRepo(),
+                properties.getCorePoolSize(),
+                properties.getMaxPoolSize(),
+                properties.getShutdownTimeout()
         );
     }
 

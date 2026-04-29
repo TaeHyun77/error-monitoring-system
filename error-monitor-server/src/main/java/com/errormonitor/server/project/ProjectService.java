@@ -36,6 +36,8 @@ public class ProjectService {
                 .description(reqDto.getDescription())
                 .build();
 
+        project.updateGithubRepo(reqDto.getGithubRepo());
+
         return ProjectResDto.from(projectRepository.save(project));
     }
 
@@ -44,5 +46,13 @@ public class ProjectService {
         return projectRepository.findAll().stream()
                 .map(ProjectResDto::from)
                 .toList();
+    }
+
+    @Transactional
+    public ProjectResDto updateGithubRepo(String projectId, String githubRepo) {
+        Project project = projectRepository.findByProjectId(projectId)
+                .orElseThrow(() -> new MonitorException(HttpStatus.NOT_FOUND, ErrorCode.PROJECT_NOT_FOUND));
+        project.updateGithubRepo(githubRepo);
+        return ProjectResDto.from(project);
     }
 }
