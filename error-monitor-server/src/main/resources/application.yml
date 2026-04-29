@@ -18,7 +18,7 @@ spring:
 
 notification:
   slack:
-    enabled: true
+    enabled: ${SLACK_ENABLED:false}
     webhook-url: ${SLACK_WEBHOOK_URL:}
 
 groq:
