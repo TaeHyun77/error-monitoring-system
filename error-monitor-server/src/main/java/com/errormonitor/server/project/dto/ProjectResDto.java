@@ -16,7 +16,6 @@ public class ProjectResDto {
     private String apiKey;
     private String name;
     private String description;
-    private String githubRepo;
     private LocalDateTime createdAt;
 
     public static ProjectResDto from(Project project) {
@@ -26,7 +25,6 @@ public class ProjectResDto {
                 .apiKey(project.getApiKey())
                 .name(project.getName())
                 .description(project.getDescription())
-                .githubRepo(project.getGithubRepo())
                 .createdAt(project.getCreatedAt())
                 .build();
     }
