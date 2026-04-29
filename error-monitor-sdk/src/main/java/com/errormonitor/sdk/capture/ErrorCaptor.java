@@ -5,13 +5,14 @@ import com.errormonitor.sdk.fingerprint.FingerprintGenerator;
 import com.errormonitor.sdk.model.ErrorEvent;
 import com.errormonitor.sdk.model.ExceptionInfo;
 import com.errormonitor.sdk.model.RequestContext;
+import com.errormonitor.sdk.transport.BackupOnRejectHandler;
+import com.errormonitor.sdk.transport.ErrorSendTask;
 import com.errormonitor.sdk.transport.FileBackupTransport;
 import com.errormonitor.sdk.transport.HttpErrorTransport;
-import com.errormonitor.sdk.util.StackTraceUtils;
+import com.errormonitor.sdk.stackTrace.StackTraceParser;
 import jakarta.annotation.PreDestroy;
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -22,16 +23,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ErrorCaptor {
-
-    private static final Logger log = LoggerFactory.getLogger(ErrorCaptor.class);
-
+@Slf4j
+public class ErrorCaptor { //
     private final HttpErrorTransport transport;
     private final FileBackupTransport fileBackupTransport;
     private final FingerprintGenerator fingerprintGenerator;
@@ -50,20 +48,22 @@ public class ErrorCaptor {
 
     private final ThreadPoolExecutor executor;
 
-    public ErrorCaptor(HttpErrorTransport transport,
-                       FileBackupTransport fileBackupTransport,
-                       FingerprintGenerator fingerprintGenerator,
-                       SensitiveDataFilter sensitiveDataFilter,
-                       String projectId,
-                       String environment,
-                       int queueCapacity,
-                       int maxStackFrames,
-                       int maxStackTraceBytes,
-                       List<String> ignoreExceptions,
-                       String githubRepo,
-                       int corePoolSize,
-                       int maxPoolSize,
-                       int shutdownTimeout) {
+    public ErrorCaptor(
+            HttpErrorTransport transport,
+            FileBackupTransport fileBackupTransport,
+            FingerprintGenerator fingerprintGenerator,
+            SensitiveDataFilter sensitiveDataFilter,
+            String projectId,
+            String environment,
+            int queueCapacity,
+            int maxStackFrames,
+            int maxStackTraceBytes,
+            List<String> ignoreExceptions,
+            String githubRepo,
+            int corePoolSize,
+            int maxPoolSize,
+            int shutdownTimeout
+    ) {
         this.transport = transport;
         this.fileBackupTransport = fileBackupTransport;
         this.fingerprintGenerator = fingerprintGenerator;
@@ -91,6 +91,7 @@ public class ErrorCaptor {
         );
     }
 
+    // 예외가 ExceptionInterceptor와 LogbackErrorAppender 두 군데에서 동시에 잡힐 수 있기에, 한 번만 처리되도록 함
     public void captureException(Exception exception, HttpServletRequest request) {
         if (exception == null) return;
         if (shouldIgnore(exception)) return;
@@ -104,6 +105,7 @@ public class ErrorCaptor {
         }
     }
 
+    // 이벤트 생성
     public void captureException(Exception exception) {
         if (exception == null) return;
         if (shouldIgnore(exception)) return;
@@ -137,8 +139,9 @@ public class ErrorCaptor {
         ExceptionInfo exceptionInfo = ExceptionInfo.builder()
                 .type(exception.getClass().getName())
                 .message(exception.getMessage())
-                .stackFrames(StackTraceUtils.parseFrames(exception, maxStackFrames))
-                .rawStackTrace(StackTraceUtils.truncate(exception, maxStackTraceBytes))
+                // 리스트 형태의 INFO 형태인 스택 트레이스와 길이를 줄인 원본 문자열 함께 서버로 보냄
+                .stackFrames(StackTraceParser.parseFrames(exception, maxStackFrames))
+                .rawStackTrace(StackTraceParser.truncate(exception, maxStackTraceBytes))
                 .build();
 
         RequestContext requestContext = request != null ? buildRequestContext(request) : null;
@@ -208,46 +211,6 @@ public class ErrorCaptor {
                 }
             }
             Thread.currentThread().interrupt();
-        }
-    }
-
-    private static class ErrorSendTask implements Runnable {
-        private final HttpErrorTransport transport;
-        private final ErrorEvent event;
-
-        ErrorSendTask(HttpErrorTransport transport, ErrorEvent event) {
-            this.transport = transport;
-            this.event = event;
-        }
-
-        public ErrorEvent getEvent() {
-            return event;
-        }
-
-        @Override
-        public void run() {
-            try {
-                transport.send(event);
-            } catch (Exception e) {
-                LoggerFactory.getLogger(ErrorCaptor.class).debug("에러 이벤트 전송 실패", e);
-            }
-        }
-    }
-
-    private static class BackupOnRejectHandler implements RejectedExecutionHandler {
-        private final FileBackupTransport fileBackupTransport;
-
-        BackupOnRejectHandler(FileBackupTransport fileBackupTransport) {
-            this.fileBackupTransport = fileBackupTransport;
-        }
-
-        @Override
-        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-            LoggerFactory.getLogger(ErrorCaptor.class)
-                    .warn("에러 전송 큐 초과 - 로컬 백업으로 전환");
-            if (r instanceof ErrorSendTask task) {
-                fileBackupTransport.backup(task.getEvent());
-            }
         }
     }
 }

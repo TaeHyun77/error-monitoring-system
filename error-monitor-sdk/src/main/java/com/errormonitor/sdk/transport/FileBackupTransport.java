@@ -3,8 +3,7 @@ package com.errormonitor.sdk.transport;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.errormonitor.sdk.model.ErrorEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -12,9 +11,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicLong;
 
+@Slf4j
 public class FileBackupTransport {
-
-    private static final Logger log = LoggerFactory.getLogger(FileBackupTransport.class);
     private static final AtomicLong counter = new AtomicLong(0);
     private final ObjectMapper objectMapper;
     private final Path backupDir;

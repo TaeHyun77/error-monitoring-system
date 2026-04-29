@@ -1,16 +1,14 @@
 package com.errormonitor.sdk.transport;
 
 import com.errormonitor.sdk.model.ErrorEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
 
+@Slf4j
 public class HttpErrorTransport {
-
-    private static final Logger log = LoggerFactory.getLogger(HttpErrorTransport.class);
 
     private final RestTemplate restTemplate;
     private final String serverUrl;
