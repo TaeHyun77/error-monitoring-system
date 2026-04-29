@@ -8,8 +8,6 @@ import com.errormonitor.server.error.group.repository.ErrorGroupRepository;
 import com.errormonitor.server.error.ingest.dto.ErrorIngestReqDto;
 import com.errormonitor.server.error.ingest.dto.RequestContextDto;
 import com.errormonitor.server.error.ingest.dto.StackFrameDto;
-import com.errormonitor.server.notification.NotificationEvent;
-import com.errormonitor.server.project.repository.ProjectRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -29,18 +27,15 @@ public class ErrorIngestService {
 
     private final ErrorGroupRepository errorGroupRepository;
     private final ErrorEventRepository errorEventRepository;
-    private final ProjectRepository projectRepository;
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
 
     public ErrorIngestService(ErrorGroupRepository errorGroupRepository,
                               ErrorEventRepository errorEventRepository,
-                              ProjectRepository projectRepository,
                               ObjectMapper objectMapper,
                               ApplicationEventPublisher eventPublisher) {
         this.errorGroupRepository = errorGroupRepository;
         this.errorEventRepository = errorEventRepository;
-        this.projectRepository = projectRepository;
         this.objectMapper = objectMapper;
         this.eventPublisher = eventPublisher;
     }
@@ -80,7 +75,6 @@ public class ErrorIngestService {
             }
 
             group = errorGroupRepository.save(groupBuilder.build());
-            notificationType = NotificationEvent.Type.NEW_ERROR;
         }
 
         ErrorEvent event = buildErrorEvent(reqDto, group);
@@ -90,17 +84,8 @@ public class ErrorIngestService {
             eventPublisher.publishEvent(new NotificationEvent(group, notificationType));
         }
 
-        updateGithubRepo(reqDto);
-
-        log.info("[ 에러 이벤트 수신 완료 ] - Project ID : {}, fingerprint: {}, groupEventCount: {}",
+        log.info("에러 이벤트 수신 완료 - projectId: {}, fingerprint: {}, groupEventCount: {}",
                 reqDto.getProjectId(), reqDto.getFingerprint(), group.getEventCount());
-    }
-
-    private void updateGithubRepo(ErrorIngestReqDto reqDto) {
-        if (reqDto.getGithubRepo() != null && !reqDto.getGithubRepo().isBlank()) {
-            projectRepository.findByProjectId(reqDto.getProjectId())
-                    .ifPresent(project -> project.updateGithubRepo(reqDto.getGithubRepo()));
-        }
     }
 
     private ErrorEvent buildErrorEvent(ErrorIngestReqDto reqDto, ErrorGroup group) {
