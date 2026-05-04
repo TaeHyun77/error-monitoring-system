@@ -7,7 +7,6 @@
 ### Architecture 
 ---
 <pre>
-```text
 [각 서비스 (Spring Boot)]
         │
         │ (SDK가 에러 감지)
@@ -37,7 +36,6 @@
         └─ 6. Slack 추가 알림
                ├─ 근본 원인 요약
                └─ 해결 방법 3가지 제공
-```
 </pre><br><br>
 
 ### 핵심 원칙
