@@ -1,0 +1,25 @@
+# 빌드 산출물
+build/
+**/build/
+*.jar
+*.war
+
+# Gradle 캐시
+.gradle/
+
+# IDE 설정
+.idea/
+*.iml
+
+# OS 캐시
+.DS_Store
+
+# 로그
+*.log
+logs/
+
+# 환경변수 / 시크릿
+.env
+*.pem
+*.key
+*.crt

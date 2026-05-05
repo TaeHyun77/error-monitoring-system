@@ -24,6 +24,10 @@ services:
       DB_NAME: error_monitor
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      SLACK_ENABLED: ${SLACK_ENABLED:-false}
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
     depends_on:
       - postgres
     networks:
