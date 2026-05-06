@@ -60,43 +60,124 @@
         </div>
     </div>
 
-    <!-- 이벤트 목록 -->
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">이벤트 목록</h2>
+    <!-- AI 분석 섹션 -->
+    <div class="bg-white rounded-lg shadow border border-gray-200 p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                AI 에러 분석
+            </h2>
 
-    <div th:if="${#lists.isEmpty(events)}" class="text-center py-12 text-gray-400">
+            <!-- 분석 없음 또는 실패 시 버튼 표시 -->
+            <form th:if="${analysis == null || analysis.status.name() == 'FAILED'}"
+                  th:action="@{/dashboard/groups/{gid}/analyze(gid=${group.id})}" method="post">
+                <button type="submit" class="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium">
+                    AI 분석 요청
+                </button>
+            </form>
+        </div>
+
+        <!-- 분석 없음 -->
+        <div th:if="${analysis == null}" class="text-center py-8 text-gray-400">
+            <p>아직 AI 분석이 수행되지 않았습니다. 'AI 분석 요청' 버튼을 클릭하여 분석을 시작하세요.</p>
+        </div>
+
+        <!-- PENDING / IN_PROGRESS -->
+        <div th:if="${analysis != null && (analysis.status.name() == 'PENDING' || analysis.status.name() == 'IN_PROGRESS')}" class="text-center py-8">
+            <div class="inline-flex items-center px-4 py-2 bg-purple-50 rounded-full">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-purple-700 font-medium">AI가 에러를 분석하고 있습니다...</span>
+            </div>
+            <p class="text-gray-400 text-sm mt-2">소스코드를 탐색하여 원인을 분석 중입니다. 잠시만 기다려주세요.</p>
+            <script>setTimeout(function(){ location.reload(); }, 5000);</script>
+        </div>
+
+        <!-- COMPLETED -->
+        <div th:if="${analysis != null && analysis.status.name() == 'COMPLETED'}">
+            <!-- 근본 원인 -->
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <h3 class="text-sm font-semibold text-red-800 mb-2">근본 원인</h3>
+                <p class="text-sm text-red-700 whitespace-pre-wrap" th:text="${analysis.rootCause}">Root cause</p>
+            </div>
+
+            <!-- 해결 방안 -->
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">해결 방안</h3>
+            <div class="space-y-3">
+                <div th:each="solution : ${analysis.solutions}"
+                     th:classappend="${solution.recommended} ? 'border-purple-300 bg-purple-50' : 'border-gray-200 bg-gray-50'"
+                     class="border rounded-lg p-4">
+                    <div class="flex items-center mb-2">
+                        <span th:if="${solution.recommended}"
+                              class="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-600 text-white mr-2">추천</span>
+                        <h4 class="text-sm font-semibold text-gray-900" th:text="${solution.title}">Solution title</h4>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2" th:text="${solution.description}">Description</p>
+                    <div th:if="${solution.codeExample != null && !solution.codeExample.isEmpty()}" class="mt-2">
+                        <pre class="bg-gray-900 text-gray-100 rounded p-3 text-xs overflow-x-auto"><code th:text="${solution.codeExample}">code</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 재분석 버튼 -->
+            <div class="mt-4 text-right">
+                <form th:action="@{/dashboard/groups/{gid}/analyze(gid=${group.id})}" method="post" class="inline">
+                    <button type="submit" class="px-3 py-1.5 text-sm text-purple-600 border border-purple-300 rounded hover:bg-purple-50">
+                        재분석
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- FAILED -->
+        <div th:if="${analysis != null && analysis.status.name() == 'FAILED'}" class="text-center py-6">
+            <div class="inline-flex items-center px-4 py-2 bg-red-50 rounded-full mb-2">
+                <span class="text-red-600 font-medium">분석 실패</span>
+            </div>
+            <p class="text-sm text-gray-500" th:text="${analysis.errorMessage}">Error message</p>
+        </div>
+    </div>
+
+    <!-- 이벤트 클러스터 -->
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">이벤트 클러스터</h2>
+
+    <div th:if="${#lists.isEmpty(clusters)}" class="text-center py-12 text-gray-400">
         <p>이벤트가 없습니다.</p>
     </div>
 
-    <div th:unless="${#lists.isEmpty(events)}" class="bg-white rounded-lg shadow border border-gray-200 overflow-x-auto">
-        <table class="min-w-full text-sm">
-            <thead class="bg-gray-50 text-left text-gray-600">
-                <tr>
-                    <th class="px-4 py-3 font-medium">예외 타입</th>
-                    <th class="px-4 py-3 font-medium">메시지</th>
-                    <th class="px-4 py-3 font-medium whitespace-nowrap">발생 위치</th>
-                    <th class="px-4 py-3 font-medium">환경</th>
-                    <th class="px-4 py-3 font-medium">요청 URL</th>
-                    <th class="px-4 py-3 font-medium whitespace-nowrap">발생 시간</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                <tr th:each="event : ${events}" class="hover:bg-gray-50">
-                    <td class="px-4 py-3 whitespace-nowrap">
-                        <a th:href="@{/dashboard/events/{eid}(eid=${event.id})}"
-                           class="text-blue-600 hover:underline font-medium"
-                           th:text="${event.exceptionType}">Exception</a>
-                    </td>
-                    <td class="px-4 py-3 text-gray-600" th:text="${event.message}">Message</td>
-                    <td class="px-4 py-3 text-gray-500 font-mono text-xs whitespace-nowrap">
-                        <span th:if="${event.sourceClass != null}" th:text="${event.sourceClass + '.' + event.sourceMethod + '():' + event.sourceLineNumber}">Class.method():42</span>
-                        <span th:if="${event.sourceClass == null}" class="text-gray-300">-</span>
-                    </td>
-                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap" th:text="${event.environment} ?: '-'">prod</td>
-                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap" th:text="${event.requestUrl} ?: '-'">/api/test</td>
-                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap" th:text="${#temporals.format(event.createdAt, 'yyyy-MM-dd HH:mm:ss')}">-</td>
-                </tr>
-            </tbody>
-        </table>
+    <div th:unless="${#lists.isEmpty(clusters)}" class="space-y-3">
+        <div th:each="cluster : ${clusters}"
+             class="bg-white rounded-lg shadow border border-gray-200 p-4 hover:border-gray-300 transition-colors">
+            <div class="flex items-start justify-between">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center space-x-2">
+                        <a th:href="@{/dashboard/events/{eid}(eid=${cluster.sampleEvent.id})}"
+                           class="text-blue-600 hover:underline font-medium text-sm truncate"
+                           th:text="${cluster.message} ?: '(메시지 없음)'">Message</a>
+                        <span th:if="${cluster.sourceLineNumber != null}"
+                              class="text-xs text-gray-400 font-mono whitespace-nowrap"
+                              th:text="'라인 ' + ${cluster.sourceLineNumber}">라인 42</span>
+                    </div>
+                    <div class="mt-1 text-xs text-gray-500 space-x-3">
+                        <span th:if="${cluster.sampleEvent.sourceClass != null}"
+                              class="font-mono"
+                              th:text="${cluster.sampleEvent.sourceClass + '.' + cluster.sampleEvent.sourceMethod + '()'}">Class.method()</span>
+                        <span th:if="${cluster.sampleEvent.environment != null}"
+                              th:text="${cluster.sampleEvent.environment}">prod</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4 ml-4 text-sm shrink-0">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800"
+                          th:text="${cluster.count} + '건'">60건</span>
+                    <span class="text-gray-400 text-xs whitespace-nowrap"
+                          th:text="'마지막 ' + ${#temporals.format(cluster.latestAt, 'yyyy-MM-dd HH:mm:ss')}">마지막 2024-01-01 10:00:00</span>
+                </div>
+            </div>
+        </div>
     </div>
 </main>
 

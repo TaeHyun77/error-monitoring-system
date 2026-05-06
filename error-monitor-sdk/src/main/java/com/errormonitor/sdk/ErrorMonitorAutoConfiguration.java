@@ -8,9 +8,11 @@ import com.errormonitor.sdk.transport.HttpErrorTransport;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
@@ -112,5 +114,19 @@ public class ErrorMonitorAutoConfiguration {
         LogbackErrorAppender appender = new LogbackErrorAppender(errorCaptor);
         appender.register();
         return appender;
+    }
+
+    // 필터 레이어 예외 감지 : 4xx(의도된 오류) 제외, 5xx급 장애만 포착
+    @Bean
+    @ConditionalOnMissingBean(FilterExceptionCaptureFilter.class)
+    public FilterRegistrationBean<FilterExceptionCaptureFilter> filterExceptionCaptureFilter(
+            ErrorCaptor errorCaptor,
+            ErrorMonitorProperties properties) {
+        FilterExceptionCaptureFilter filter =
+                new FilterExceptionCaptureFilter(errorCaptor, properties.getIgnoreUrls());
+        FilterRegistrationBean<FilterExceptionCaptureFilter> registration =
+                new FilterRegistrationBean<>(filter);
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE); // 필터 체인 최외곽에 배치
+        return registration;
     }
 }
