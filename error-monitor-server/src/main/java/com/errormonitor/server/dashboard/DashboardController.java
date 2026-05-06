@@ -44,7 +44,7 @@ public class DashboardController {
     @GetMapping("/dashboard/groups/{groupId}")
     public String errorGroupDetail(@PathVariable Long groupId, Model model) {
         model.addAttribute("group", errorGroupService.getErrorGroup(groupId));
-        model.addAttribute("events", errorEventService.getEventsByGroup(groupId));
+        model.addAttribute("clusters", errorEventService.getEventClustersByGroup(groupId));
         model.addAttribute("analysis", errorAnalysisService.getAnalysis(groupId));
         return "error-group-detail";
     }

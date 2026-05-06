@@ -142,43 +142,42 @@
         </div>
     </div>
 
-    <!-- 이벤트 목록 -->
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">이벤트 목록</h2>
+    <!-- 이벤트 클러스터 -->
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">이벤트 클러스터</h2>
 
-    <div th:if="${#lists.isEmpty(events)}" class="text-center py-12 text-gray-400">
+    <div th:if="${#lists.isEmpty(clusters)}" class="text-center py-12 text-gray-400">
         <p>이벤트가 없습니다.</p>
     </div>
 
-    <div th:unless="${#lists.isEmpty(events)}" class="bg-white rounded-lg shadow border border-gray-200 overflow-x-auto">
-        <table class="min-w-full text-sm">
-            <thead class="bg-gray-50 text-left text-gray-600">
-                <tr>
-                    <th class="px-4 py-3 font-medium">예외 타입</th>
-                    <th class="px-4 py-3 font-medium">메시지</th>
-                    <th class="px-4 py-3 font-medium whitespace-nowrap">발생 위치</th>
-                    <th class="px-4 py-3 font-medium">환경</th>
-                    <th class="px-4 py-3 font-medium">요청 URL</th>
-                    <th class="px-4 py-3 font-medium whitespace-nowrap">발생 시간</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                <tr th:each="event : ${events}" class="hover:bg-gray-50">
-                    <td class="px-4 py-3 whitespace-nowrap">
-                        <a th:href="@{/dashboard/events/{eid}(eid=${event.id})}"
-                           class="text-blue-600 hover:underline font-medium"
-                           th:text="${event.exceptionType}">Exception</a>
-                    </td>
-                    <td class="px-4 py-3 text-gray-600" th:text="${event.message}">Message</td>
-                    <td class="px-4 py-3 text-gray-500 font-mono text-xs whitespace-nowrap">
-                        <span th:if="${event.sourceClass != null}" th:text="${event.sourceClass + '.' + event.sourceMethod + '():' + event.sourceLineNumber}">Class.method():42</span>
-                        <span th:if="${event.sourceClass == null}" class="text-gray-300">-</span>
-                    </td>
-                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap" th:text="${event.environment} ?: '-'">prod</td>
-                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap" th:text="${event.requestUrl} ?: '-'">/api/test</td>
-                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap" th:text="${#temporals.format(event.createdAt, 'yyyy-MM-dd HH:mm:ss')}">-</td>
-                </tr>
-            </tbody>
-        </table>
+    <div th:unless="${#lists.isEmpty(clusters)}" class="space-y-3">
+        <div th:each="cluster : ${clusters}"
+             class="bg-white rounded-lg shadow border border-gray-200 p-4 hover:border-gray-300 transition-colors">
+            <div class="flex items-start justify-between">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center space-x-2">
+                        <a th:href="@{/dashboard/events/{eid}(eid=${cluster.sampleEvent.id})}"
+                           class="text-blue-600 hover:underline font-medium text-sm truncate"
+                           th:text="${cluster.message} ?: '(메시지 없음)'">Message</a>
+                        <span th:if="${cluster.sourceLineNumber != null}"
+                              class="text-xs text-gray-400 font-mono whitespace-nowrap"
+                              th:text="'라인 ' + ${cluster.sourceLineNumber}">라인 42</span>
+                    </div>
+                    <div class="mt-1 text-xs text-gray-500 space-x-3">
+                        <span th:if="${cluster.sampleEvent.sourceClass != null}"
+                              class="font-mono"
+                              th:text="${cluster.sampleEvent.sourceClass + '.' + cluster.sampleEvent.sourceMethod + '()'}">Class.method()</span>
+                        <span th:if="${cluster.sampleEvent.environment != null}"
+                              th:text="${cluster.sampleEvent.environment}">prod</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4 ml-4 text-sm shrink-0">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800"
+                          th:text="${cluster.count} + '건'">60건</span>
+                    <span class="text-gray-400 text-xs whitespace-nowrap"
+                          th:text="'마지막 ' + ${#temporals.format(cluster.latestAt, 'yyyy-MM-dd HH:mm:ss')}">마지막 2024-01-01 10:00:00</span>
+                </div>
+            </div>
+        </div>
     </div>
 </main>
 
