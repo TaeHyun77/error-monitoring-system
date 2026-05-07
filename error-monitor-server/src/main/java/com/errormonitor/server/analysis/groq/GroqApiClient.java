@@ -7,12 +7,15 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 @Component
@@ -26,16 +29,19 @@ public class GroqApiClient {
     private final GitHubApiClient gitHubApiClient;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
+    private final String systemPrompt;
 
     public GroqApiClient(GroqProperties properties,
                          GitHubApiClient gitHubApiClient,
-                         ObjectMapper objectMapper) {
+                         ObjectMapper objectMapper) throws IOException {
         this.properties = properties;
         this.gitHubApiClient = gitHubApiClient;
         this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(30))
                 .build();
+        this.systemPrompt = new ClassPathResource("prompts/error-analysis-system.txt")
+                .getContentAsString(StandardCharsets.UTF_8);
     }
 
     public String analyze(String githubRepo, String exceptionType, String message,
@@ -155,42 +161,7 @@ public class GroqApiClient {
     }
 
     private String buildSystemPrompt() {
-        return """
-                너는 SpringBoot/Java 디버깅 전용 AI 분석 비서이다.
-                답변은 항상 아래 JSON 형식을 정확히 따르고, 모든 설명은 반드시 한글로 작성해야 한다.
-
-                {
-                  "rootCause": "근본 원인에 대한 상세 설명 및 분석 (오류 발생 파일과 라인 정보 포함)",
-                  "solutions": [
-                    {
-                      "title": "추천 해결책 제목",
-                      "description": "해결책 상세 설명",
-                      "codeExample": "실제 수정 코드",
-                      "recommended": true
-                    },
-                    {
-                      "title": "대안 제목1",
-                      "description": "대안 설명1",
-                      "codeExample": "코드 예시1",
-                      "recommended": false
-                    },
-                    {
-                      "title": "대안 제목2",
-                      "description": "대안 설명2",
-                      "codeExample": "코드 예시2",
-                      "recommended": false
-                    }
-                  ]
-                }
-
-                규칙:
-                - JSON 키는 반드시 rootCause, solutions, title, description, codeExample, recommended를 사용한다
-                - 정확히 3개의 해결책만 제공하고, 그중 1개에만 recommended: true를 설정한다
-                - 문제의 해결 방법에 대해 자세히 생각하여, 바로 적용할 수 있는 해결법을 제시해라
-                - 해결책을 제시하기 전에 반드시 실제 소스 코드를 확인한다
-                - codeExample에는 실제 수정 코드가 포함되어야 한다
-                - 응답은 순수 JSON 형식으로만 작성하고, 마크다운 코드 블록은 사용하지 않는다
-                """;
+        return systemPrompt;
     }
 
     private ArrayNode buildTools() {

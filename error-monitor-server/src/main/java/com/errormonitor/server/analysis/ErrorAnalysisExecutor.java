@@ -18,6 +18,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 public class ErrorAnalysisExecutor {
@@ -114,15 +116,22 @@ public class ErrorAnalysisExecutor {
             );
 
             // TX2: Save results
+            String jsonText = extractJson(result);
             transactionTemplate.executeWithoutResult(status -> {
                 ErrorAnalysis analysis = analysisRepository.findById(analysisId).orElseThrow();
+                if (jsonText == null) {
+                    log.warn("AI 분석 응답에서 JSON 추출 실패 - analysisId: {}", analysisId);
+                    analysis.failAnalysis("AI 응답을 파싱할 수 없습니다.");
+                    return;
+                }
                 try {
-                    JsonNode json = objectMapper.readTree(result);
+                    JsonNode json = objectMapper.readTree(jsonText);
                     String rootCause = json.path("rootCause").asText();
                     String solutions = objectMapper.writeValueAsString(json.path("solutions"));
                     analysis.completeAnalysis(rootCause, solutions);
                 } catch (Exception e) {
-                    analysis.completeAnalysis(result, "[]");
+                    log.warn("JSON 파싱 실패 - analysisId: {}", analysisId, e);
+                    analysis.failAnalysis("AI 응답 JSON 파싱에 실패했습니다.");
                 }
             });
 
@@ -242,5 +251,56 @@ public class ErrorAnalysisExecutor {
             }
         }
         return false;
+    }
+
+    private static final Pattern MARKDOWN_JSON_PATTERN = Pattern.compile("```(?:json)?\\s*\\n?(.*?)\\n?```", Pattern.DOTALL);
+
+    /**
+     * Groq 응답에서 JSON을 추출한다.
+     * 1) 순수 JSON 파싱 시도
+     * 2) markdown 코드 블록(```json ... ```) 내부 추출
+     * 3) 첫 번째 '{' ~ 마지막 '}' 범위 추출
+     * 모두 실패하면 null 반환
+     */
+    String extractJson(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+
+        String trimmed = raw.trim();
+
+        // 1단계: 순수 JSON 파싱 시도
+        if (trimmed.startsWith("{")) {
+            try {
+                objectMapper.readTree(trimmed);
+                return trimmed;
+            } catch (Exception ignored) {
+            }
+        }
+
+        // 2단계: markdown 코드 블록 제거
+        Matcher matcher = MARKDOWN_JSON_PATTERN.matcher(trimmed);
+        if (matcher.find()) {
+            String extracted = matcher.group(1).trim();
+            try {
+                objectMapper.readTree(extracted);
+                return extracted;
+            } catch (Exception ignored) {
+            }
+        }
+
+        // 3단계: 첫 번째 '{' ~ 마지막 '}' 범위 추출
+        int first = trimmed.indexOf('{');
+        int last = trimmed.lastIndexOf('}');
+        if (first != -1 && last > first) {
+            String extracted = trimmed.substring(first, last + 1);
+            try {
+                objectMapper.readTree(extracted);
+                return extracted;
+            } catch (Exception ignored) {
+            }
+        }
+
+        return null;
     }
 }

@@ -9,7 +9,9 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 @Getter
@@ -31,8 +33,9 @@ public class ErrorAnalysisResDto {
         List<AnalysisSolutionDto> solutionList = Collections.emptyList();
         if (analysis.getSolutions() != null && !analysis.getSolutions().isBlank()) {
             try {
-                solutionList = mapper.readValue(analysis.getSolutions(),
-                        new TypeReference<List<AnalysisSolutionDto>>() {});
+                solutionList = new ArrayList<>(mapper.readValue(analysis.getSolutions(),
+                        new TypeReference<List<AnalysisSolutionDto>>() {}));
+                solutionList.sort(Comparator.comparing(AnalysisSolutionDto::isRecommended).reversed());
             } catch (Exception ignored) {
             }
         }
