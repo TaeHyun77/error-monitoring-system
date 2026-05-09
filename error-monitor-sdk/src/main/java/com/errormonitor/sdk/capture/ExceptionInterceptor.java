@@ -20,8 +20,12 @@ public class ExceptionInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
-                                Object handler, Exception ex) {
+    public void afterCompletion(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Object handler,
+            Exception ex
+    ) {
         String requestUri = request.getRequestURI();
         if (ignoreUrls.stream().anyMatch(requestUri::startsWith)) {
             return;
@@ -37,6 +41,14 @@ public class ExceptionInterceptor implements HandlerInterceptor {
         }
 
         if (exception != null) {
+            // 1순위: 응답 상태 코드 (afterCompletion에서 확정된 경우, 커스텀 예외 포함 대응)
+            if (response.getStatus() >= 400 && response.getStatus() < 500) {
+                return;
+            }
+            // 2순위: 예외 객체 기반 (응답 상태 미확정 시 대비, Spring 표준 예외 대응)
+            if (HttpStatusExceptionUtils.is4xxException(exception)) {
+                return;
+            }
             errorCaptor.captureException(exception, request);
         }
     }
