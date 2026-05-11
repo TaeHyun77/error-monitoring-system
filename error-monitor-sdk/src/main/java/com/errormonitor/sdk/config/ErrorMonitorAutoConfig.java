@@ -1,8 +1,9 @@
-package com.errormonitor.sdk;
+package com.errormonitor.sdk.config;
 
 import com.errormonitor.sdk.capture.*;
 import com.errormonitor.sdk.filter.SensitiveDataFilter;
 import com.errormonitor.sdk.fingerprint.FingerprintGenerator;
+import com.errormonitor.sdk.transport.backup.BackupReplayScheduler;
 import com.errormonitor.sdk.transport.FileBackupTransport;
 import com.errormonitor.sdk.transport.HttpErrorTransport;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -21,7 +22,7 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 @EnableConfigurationProperties(ErrorMonitorProperties.class)
 @ConditionalOnProperty(name = "error-monitor.enabled", matchIfMissing = true) // false 넣으면 전체 SDK 비활성화
-public class ErrorMonitorAutoConfiguration {
+public class ErrorMonitorAutoConfig {
 
     @Bean
     // 사용하는 프로젝트에서 사용자가 직접 Bean 만들면 SDK 기본 Bean 안씀 - 커스터 가능
@@ -114,6 +115,19 @@ public class ErrorMonitorAutoConfiguration {
         LogbackErrorAppender appender = new LogbackErrorAppender(errorCaptor);
         appender.register();
         return appender;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public BackupReplayScheduler backupReplayScheduler(
+            FileBackupTransport fileBackupTransport,
+            HttpErrorTransport httpErrorTransport,
+            ErrorMonitorProperties properties) {
+        return new BackupReplayScheduler(
+                fileBackupTransport,
+                httpErrorTransport,
+                properties.getReplayIntervalSeconds(),
+                properties.getReplayBatchSize());
     }
 
     // 필터 레이어 예외 감지 : 4xx(의도된 오류) 제외, 5xx급 장애만 포착

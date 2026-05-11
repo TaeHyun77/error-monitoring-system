@@ -5,6 +5,7 @@ import com.errormonitor.server.exception.MonitorException;
 import com.errormonitor.server.project.dto.ProjectReqDto;
 import com.errormonitor.server.project.dto.ProjectResDto;
 import com.errormonitor.server.project.repository.ProjectRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,14 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+@RequiredArgsConstructor
 @Service
 public class ProjectService {
-
     private final ProjectRepository projectRepository;
-
-    public ProjectService(ProjectRepository projectRepository) {
-        this.projectRepository = projectRepository;
-    }
 
     @Transactional
     public ProjectResDto createProject(ProjectReqDto reqDto) {

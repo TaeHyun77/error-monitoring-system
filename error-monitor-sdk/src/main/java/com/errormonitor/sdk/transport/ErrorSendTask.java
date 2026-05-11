@@ -1,19 +1,16 @@
 package com.errormonitor.sdk.transport;
 
-import com.errormonitor.sdk.model.ErrorEvent;
+import com.errormonitor.sdk.event.ErrorEvent;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Getter
+@RequiredArgsConstructor
 public class ErrorSendTask implements Runnable {
     private final HttpErrorTransport transport;
-    @Getter
     private final ErrorEvent event;
-
-    public ErrorSendTask(HttpErrorTransport transport, ErrorEvent event) {
-        this.transport = transport;
-        this.event = event;
-    }
 
     @Override
     public void run() {

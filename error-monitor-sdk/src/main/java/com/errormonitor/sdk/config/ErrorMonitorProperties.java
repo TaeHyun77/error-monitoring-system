@@ -1,4 +1,4 @@
-package com.errormonitor.sdk;
+package com.errormonitor.sdk.config;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -30,4 +30,6 @@ public class ErrorMonitorProperties {
     private int connectTimeout = 3000;
     private int readTimeout = 5000;
     private int shutdownTimeout = 10;
+    private int replayIntervalSeconds = 60;
+    private int replayBatchSize = 10;
 }

@@ -32,6 +32,10 @@
 ## 트랜잭션
 - 쓰기: @Transactional
 
+## 이벤트 클래스 패턴 (SDK 직렬화/역직렬화 대상)
+- @Getter + @Builder + @NoArgsConstructor + @AllArgsConstructor
+- Jackson 역직렬화를 위해 `@NoArgsConstructor` 필수
+
 ## 네이밍
 - 패키지: 도메인 중심 (airport/plane/, messaging/chat/)
 - DTO: {Entity}ResDto, {Entity}ReqDto

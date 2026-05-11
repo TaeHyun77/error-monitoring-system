@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class CustomExceptionHandler {
-
     @ExceptionHandler(MonitorException.class)
     public ResponseEntity<ErrorDto> handleMonitorException(MonitorException e) {
         ErrorDto errorDto = ErrorDto.builder()

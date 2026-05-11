@@ -5,6 +5,7 @@ import com.errormonitor.server.error.event.dto.EventClusterResDto;
 import com.errormonitor.server.error.event.repository.ErrorEventRepository;
 import com.errormonitor.server.exception.ErrorCode;
 import com.errormonitor.server.exception.MonitorException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,14 +14,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
+@RequiredArgsConstructor
 @Service
 public class ErrorEventService {
-
     private final ErrorEventRepository errorEventRepository;
-
-    public ErrorEventService(ErrorEventRepository errorEventRepository) {
-        this.errorEventRepository = errorEventRepository;
-    }
 
     @Transactional(readOnly = true)
     public List<ErrorEventResDto> getEventsByGroup(Long groupId) {

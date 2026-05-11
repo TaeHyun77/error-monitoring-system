@@ -1,13 +1,15 @@
-package com.errormonitor.sdk.model;
+package com.errormonitor.sdk.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
 @Getter
 @Builder
+@NoArgsConstructor
 @AllArgsConstructor
 public class ErrorEvent { // 하나의 에러를 나타내는 정보 값
     private String projectId; // 프로젝트 구분
