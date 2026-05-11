@@ -2,10 +2,12 @@ package com.errormonitor.sdk.capture;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 public class ExceptionInterceptor implements HandlerInterceptor {
 
     private static final String DISPATCHER_EXCEPTION_ATTR =
@@ -13,11 +15,6 @@ public class ExceptionInterceptor implements HandlerInterceptor {
 
     private final ErrorCaptor errorCaptor;
     private final List<String> ignoreUrls;
-
-    public ExceptionInterceptor(ErrorCaptor errorCaptor, List<String> ignoreUrls) {
-        this.errorCaptor = errorCaptor;
-        this.ignoreUrls = ignoreUrls;
-    }
 
     @Override
     public void afterCompletion(

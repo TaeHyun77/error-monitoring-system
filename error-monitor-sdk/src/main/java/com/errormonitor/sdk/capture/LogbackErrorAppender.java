@@ -12,12 +12,12 @@ import org.slf4j.LoggerFactory;
 public class LogbackErrorAppender extends AppenderBase<ILoggingEvent> {
 
     private static final String SDK_LOGGER_PREFIX = "com.errormonitor.sdk";
-
+    private static final String APPENDER_NAME = "ERROR_MONITOR_LOGBACK_APPENDER";
     private final ErrorCaptor errorCaptor;
 
     public LogbackErrorAppender(ErrorCaptor errorCaptor) {
         this.errorCaptor = errorCaptor;
-        setName("ERROR_MONITOR_APPENDER");
+        setName(APPENDER_NAME);
     }
 
     @Override

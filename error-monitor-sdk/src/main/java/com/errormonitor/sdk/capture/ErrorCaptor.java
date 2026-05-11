@@ -2,10 +2,10 @@ package com.errormonitor.sdk.capture;
 
 import com.errormonitor.sdk.filter.SensitiveDataFilter;
 import com.errormonitor.sdk.fingerprint.FingerprintGenerator;
-import com.errormonitor.sdk.model.ErrorEvent;
-import com.errormonitor.sdk.model.ExceptionInfo;
-import com.errormonitor.sdk.model.RequestContext;
-import com.errormonitor.sdk.transport.BackupOnRejectHandler;
+import com.errormonitor.sdk.event.ErrorEvent;
+import com.errormonitor.sdk.event.ExceptionInfo;
+import com.errormonitor.sdk.event.RequestContext;
+import com.errormonitor.sdk.transport.backup.BackupOnRejectHandler;
 import com.errormonitor.sdk.transport.ErrorSendTask;
 import com.errormonitor.sdk.transport.FileBackupTransport;
 import com.errormonitor.sdk.transport.HttpErrorTransport;
@@ -28,6 +28,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+// ⭐️ 핵심이 되는 클래스, 에러를 감지하고 에러 서버로 전송
 @Slf4j
 public class ErrorCaptor { //
     private final HttpErrorTransport transport;
@@ -91,10 +92,17 @@ public class ErrorCaptor { //
         );
     }
 
-    // 예외가 ExceptionInterceptor와 LogbackErrorAppender 두 군데에서 동시에 잡힐 수 있기에, 한 번만 처리되도록 함
-    public void captureException(Exception exception, HttpServletRequest request) {
-        if (exception == null) return;
-        if (shouldIgnore(exception)) return;
+    // HTTP 요청 컨텍스트가 없는 예외 캡처용
+    public void captureException(Exception exception) {
+        captureException(exception, null);
+    }
+
+    // HTTP 요청 컨텍스트가 있는 예외 캡처용
+    public void captureException(
+            Exception exception,
+            HttpServletRequest request
+    ) {
+        if (exception == null || shouldIgnore(exception)) return;
         if (isAlreadyCaptured(exception)) return;
 
         try {
@@ -105,37 +113,26 @@ public class ErrorCaptor { //
         }
     }
 
-    // 이벤트 생성
-    public void captureException(Exception exception) {
-        if (exception == null) return;
-        if (shouldIgnore(exception)) return;
-        if (isAlreadyCaptured(exception)) return;
-
-        try {
-            ErrorEvent event = buildEvent(exception, null);
-            executor.submit(new ErrorSendTask(transport, event));
-        } catch (Exception e) {
-            log.debug("에러 캡처 실패", e);
-        }
-    }
-
+    // 이미 감지된 에러인지 파악
     private boolean isAlreadyCaptured(Exception exception) {
         synchronized (capturedExceptions) {
-            if (capturedExceptions.contains(exception)) {
-                return true;
-            }
+            if (capturedExceptions.contains(exception)) return true;
             capturedExceptions.add(exception);
             return false;
         }
     }
 
+    // 특정 예외는 아예 에러 모니터링 대상에서 제외하기 위한 필터
     private boolean shouldIgnore(Exception exception) {
         String exceptionName = exception.getClass().getName();
-        return ignoreExceptions != null
-                && ignoreExceptions.stream().anyMatch(exceptionName::contains);
+        return ignoreExceptions != null && ignoreExceptions.stream().anyMatch(exceptionName::contains);
     }
 
-    private ErrorEvent buildEvent(Exception exception, HttpServletRequest request) {
+    // 예외를 ErrorEvent 형태로 변환
+    private ErrorEvent buildEvent(
+            Exception exception,
+            HttpServletRequest request
+    ) {
         ExceptionInfo exceptionInfo = ExceptionInfo.builder()
                 .type(exception.getClass().getName())
                 .message(exception.getMessage())
@@ -188,9 +185,7 @@ public class ErrorCaptor { //
 
     @PreDestroy
     public void shutdown() {
-        log.info("에러 모니터 SDK 종료 - 큐 잔여: {}, 활성: {}",
-                executor.getQueue().size(), executor.getActiveCount());
-
+        log.info("에러 모니터 SDK 종료 - 큐 잔여: {}, 활성: {}", executor.getQueue().size(), executor.getActiveCount());
         executor.shutdown();
 
         try {

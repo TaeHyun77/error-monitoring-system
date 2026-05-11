@@ -1,19 +1,16 @@
 package com.errormonitor.server.error.event;
 
 import com.errormonitor.server.error.event.dto.ErrorEventResDto;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api")
 public class ErrorEventController {
-
     private final ErrorEventService errorEventService;
-
-    public ErrorEventController(ErrorEventService errorEventService) {
-        this.errorEventService = errorEventService;
-    }
 
     @GetMapping("/error-groups/{groupId}/events")
     public List<ErrorEventResDto> getEventsByGroup(@PathVariable Long groupId) {
